@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { ProjectsModule } from './projects/projects.module';
 
 @Module({
   imports: [
@@ -24,9 +25,6 @@ import { AuthModule } from './auth/auth.module';
 
         synchronize: true,
 
-        // Mostra no terminal o SQL que o TypeORM executa (inclui o CREATE
-        // TABLE do synchronize). Útil agora para confirmar que a tabela foi
-        // criada; pode desligar depois.
         logging: true,
       }),
     }),
@@ -34,6 +32,8 @@ import { AuthModule } from './auth/auth.module';
     UsersModule,
 
     AuthModule,
+
+    ProjectsModule,
   ],
 })
 export class AppModule {}

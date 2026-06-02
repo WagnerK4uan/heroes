@@ -12,4 +12,11 @@ dist/
 # Logs e arquivos de sistema
 *.log
 .DS_Store
+
+# Arquivos de requisitos do projeto
+specs/
+CLAUDE.md
+pleno.md
+
+
 EOF
