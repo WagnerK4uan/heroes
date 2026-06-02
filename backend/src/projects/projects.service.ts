@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { Project } from './entities/project.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { FilterProjectsDto } from './dto/filter-projects.dto';
 
 @Injectable()
 export class ProjectsService {
@@ -22,8 +23,21 @@ export class ProjectsService {
     return this.projectRepository.save(project);
   }
 
-  findAll(): Promise<Project[]> {
-    return this.projectRepository.find({ relations: { responsible: true } });
+  findAll(filter: FilterProjectsDto = {}): Promise<Project[]> {
+    const where: FindOptionsWhere<Project> = {};
+
+    if (filter.status !== undefined) {
+      where.status = filter.status;
+    }
+
+    if (filter.responsibleId !== undefined) {
+      where.responsibleId = filter.responsibleId;
+    }
+
+    return this.projectRepository.find({
+      where,
+      relations: { responsible: true },
+    });
   }
 
   async findOne(id: number): Promise<Project> {

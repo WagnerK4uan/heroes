@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import { Roles } from '../auth/roles.decorator';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { FilterProjectsDto } from './dto/filter-projects.dto';
 
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('projects')
@@ -28,8 +30,8 @@ export class ProjectsController {
   }
 
   @Get()
-  findAll() {
-    return this.projectsService.findAll();
+  findAll(@Query() filter: FilterProjectsDto) {
+    return this.projectsService.findAll(filter);
   }
 
   @Get(':id')
