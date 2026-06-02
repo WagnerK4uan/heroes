@@ -1,0 +1,27 @@
+{
+  // Formata o arquivo automaticamente toda vez que você salvar (Ctrl+S)
+  "editor.formatOnSave": true,
+
+  // Usa o Prettier como formatador padrão
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // Além de formatar, roda o auto-fix do ESLint ao salvar
+  // (corrige imports, ordenação e outras regras "fixáveis")
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // Garante Prettier por linguagem (caso outra extensão tente assumir)
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // O ESLint do projeto fica dentro de backend/ — aponta a raiz de trabalho dele
+  "eslint.workingDirectories": [{ "directory": "./backend", "changeProcessCwd": true }]
+}
