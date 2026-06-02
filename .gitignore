@@ -1,0 +1,15 @@
+cat > .gitignore << 'EOF'
+# Dependências instaladas (recriáveis com npm install)
+node_modules/
+
+# Variáveis de ambiente com segredos — NUNCA versionar
+.env
+*.env
+
+# Saída de build
+dist/
+
+# Logs e arquivos de sistema
+*.log
+.DS_Store
+EOF

@@ -1,32 +1,29 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
-    // Traz o UsersModule para cá. Como ele EXPORTA o UsersService,
-    // o nosso AuthService poderá usá-lo para buscar usuários por email.
     UsersModule,
-
-    // Configura a fábrica de tokens. Usamos registerAsync porque
-    // precisamos pegar o JWT_SECRET do .env (lido pelo ConfigService).
+    // Registra o Passport, o sistema geral de portaria.
+    PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        // A chave secreta que assina e valida os crachás. É a mesma
-        // que você pôs no .env. Se ela vazar, qualquer um forja crachás.
         secret: config.get<string>('JWT_SECRET'),
-        // Quanto tempo o crachá vale antes de expirar. 1 dia é razoável
-        // para um app assim. Depois disso, o usuário precisa logar de novo.
         signOptions: { expiresIn: '1d' },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  // A JwtStrategy entra como provider para o Nest saber que ela existe
+  // e poder usá-la quando o guard a invocar.
+  providers: [AuthService, JwtStrategy],
 })
 export class AuthModule {}
