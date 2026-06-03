@@ -1,4 +1,5 @@
 import type { CatalogHero } from '../../data/heroes';
+import { HERO_ICONS } from './heroIcons';
 
 interface HeroBadgeProps {
   hero: CatalogHero | null;
@@ -10,10 +11,12 @@ export function HeroBadge({ hero, size = 32, ring = false }: HeroBadgeProps) {
   if (!hero) {
     return null;
   }
+  const icon = HERO_ICONS[hero.id];
   return (
     <span
       className="avatar"
       style={{
+        position: 'relative',
         width: size,
         height: size,
         fontSize: size * 0.38,
@@ -24,7 +27,30 @@ export function HeroBadge({ hero, size = 32, ring = false }: HeroBadgeProps) {
           : undefined,
       }}
     >
-      {hero.initials}
+      {icon ? (
+        <>
+          <span
+            style={{
+              position: 'absolute',
+              inset: size * 0.1,
+              borderRadius: '50%',
+              background: 'white',
+            }}
+          />
+          <img
+            src={icon}
+            alt={hero.name}
+            style={{
+              position: 'relative',
+              width: size * 0.66,
+              height: size * 0.66,
+              objectFit: 'contain',
+            }}
+          />
+        </>
+      ) : (
+        hero.initials
+      )}
     </span>
   );
 }

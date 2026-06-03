@@ -84,24 +84,8 @@ export function AuthShell({ children }: { children: ReactNode }) {
             }}
           >
             Acompanhe o progresso, defina responsáveis e mantenha cada entrega no
-            rumo certo — com controle de acesso por papel.
+            rumo certo com controle de acesso por papel.
           </p>
-          <div style={{ display: 'flex', gap: 22, marginTop: 32 }}>
-            {[
-              ['8', 'projetos ativos'],
-              ['5', 'membros'],
-              ['100%', 'rastreável'],
-            ].map(([n, l]) => (
-              <div key={l}>
-                <div
-                  style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em' }}
-                >
-                  {n}
-                </div>
-                <div style={{ fontSize: 12.5, color: 'oklch(1 0 0 / .7)' }}>{l}</div>
-              </div>
-            ))}
-          </div>
         </div>
         <div
           style={{
@@ -112,7 +96,6 @@ export function AuthShell({ children }: { children: ReactNode }) {
             fontFamily: 'var(--mono)',
           }}
         >
-          protótipo · NestJS + React + PostgreSQL
         </div>
       </div>
       <div
