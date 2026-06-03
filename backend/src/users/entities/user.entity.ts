@@ -15,7 +15,7 @@ export class User {
   @Column()
   password!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   character?: string | null;
 
   @Column({ default: 'hero' })
