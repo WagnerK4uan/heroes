@@ -12,10 +12,10 @@ import { AuthService } from './auth.service';
 
 class LoginDto {
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString()
-  password: string;
+  password!: string;
 }
 
 @Controller('auth')
