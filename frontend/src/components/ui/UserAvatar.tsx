@@ -3,7 +3,7 @@ import { Avatar } from './Avatar';
 import { HeroBadge } from './HeroBadge';
 
 interface UserAvatarProps {
-  user?: { name?: string; character?: string } | null;
+  user?: { name?: string; character?: string | null } | null;
   size?: number;
   ring?: boolean;
 }

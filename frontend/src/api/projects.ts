@@ -100,3 +100,7 @@ export async function updateProject(
   const response = await api.patch<Project>(`/projects/${id}`, payload);
   return response.data;
 }
+
+export async function deleteProject(id: number): Promise<void> {
+  await api.delete(`/projects/${id}`);
+}

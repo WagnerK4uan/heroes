@@ -1,35 +1,33 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { extractErrorMessage } from '../api/client';
-import { listHeroes, type Hero } from '../api/heroes';
 import {
-  GOAL_FIELDS,
   STATUS_LABELS,
   STATUS_OPTIONS,
-  completionPercentage,
+  deleteProject,
   listProjects,
   type Project,
   type ProjectFilters,
   type ProjectResponsible,
   type ProjectStatus,
 } from '../api/projects';
-import { ProjectFormModal } from '../components/ProjectFormModal';
+import { TopBar } from '../components/TopBar';
+import { ProjectCard } from '../components/ProjectCard';
+import { EmptyState } from '../components/ui/EmptyState';
+import { ConfirmDelete } from '../components/ui/ConfirmDelete';
+import { Icon, I } from '../components/ui/Icon';
+import { useToast } from '../components/ui/ToastContext';
 
-const STATUS_BADGE: Record<ProjectStatus, string> = {
-  pendente: 'bg-amber-500/15 text-amber-300',
-  em_andamento: 'bg-sky-500/15 text-sky-300',
-  concluido: 'bg-emerald-500/15 text-emerald-300',
-};
-
-interface FilterHero {
+interface ResponsibleOption {
   id: number;
   name: string;
 }
 
 export function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const isAdmin = user?.role === 'admin';
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -37,15 +35,14 @@ export function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | ''>('');
-  const [responsibleFilter, setResponsibleFilter] = useState<string>('');
+  const [responsibleFilter, setResponsibleFilter] = useState('');
 
-  const [seenHeroes, setSeenHeroes] = useState<Record<number, ProjectResponsible>>(
-    {},
-  );
-  const [adminHeroes, setAdminHeroes] = useState<Hero[]>([]);
+  const [seenResponsibles, setSeenResponsibles] = useState<
+    Record<number, ProjectResponsible>
+  >({});
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<Project | null>(null);
+  const [toDelete, setToDelete] = useState<Project | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadProjects = useCallback(async () => {
     setLoading(true);
@@ -60,7 +57,7 @@ export function DashboardPage() {
     try {
       const data = await listProjects(filters);
       setProjects(data);
-      setSeenHeroes((prev) => {
+      setSeenResponsibles((prev) => {
         const next = { ...prev };
         for (const project of data) {
           if (project.responsible) {
@@ -70,258 +67,310 @@ export function DashboardPage() {
         return next;
       });
     } catch (err) {
-      setError(
-        extractErrorMessage(err, 'Não foi possível carregar os projetos.'),
+      const message = extractErrorMessage(
+        err,
+        'Não foi possível carregar os projetos.',
       );
+      setError(message);
+      toast(message, 'error');
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, responsibleFilter]);
+  }, [statusFilter, responsibleFilter, toast]);
 
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
 
-  useEffect(() => {
-    if (!isAdmin) {
-      return;
-    }
-    let active = true;
-    listHeroes()
-      .then((data) => {
-        if (active) {
-          setAdminHeroes(data);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setAdminHeroes([]);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [isAdmin]);
-
-  const filterHeroes = useMemo<FilterHero[]>(() => {
-    const map = new Map<number, FilterHero>();
-    for (const hero of Object.values(seenHeroes)) {
-      map.set(hero.id, { id: hero.id, name: hero.name });
-    }
-    for (const hero of adminHeroes) {
-      map.set(hero.id, { id: hero.id, name: hero.name });
+  const responsibleOptions = useMemo<ResponsibleOption[]>(() => {
+    const map = new Map<number, ResponsibleOption>();
+    for (const responsible of Object.values(seenResponsibles)) {
+      map.set(responsible.id, { id: responsible.id, name: responsible.name });
     }
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [seenHeroes, adminHeroes]);
+  }, [seenResponsibles]);
 
-  function handleLogout() {
-    logout();
-    navigate('/login', { replace: true });
+  const stats = useMemo(
+    () => ({
+      total: projects.length,
+      active: projects.filter((p) => p.status === 'em_andamento').length,
+      done: projects.filter((p) => p.status === 'concluido').length,
+    }),
+    [projects],
+  );
+
+  const hasFilter = Boolean(statusFilter || responsibleFilter);
+
+  function clearFilters() {
+    setStatusFilter('');
+    setResponsibleFilter('');
   }
 
-  function openCreate() {
-    setEditing(null);
-    setFormOpen(true);
-  }
-
-  function openEdit(project: Project) {
-    setEditing(project);
-    setFormOpen(true);
-  }
-
-  function handleSaved() {
-    setFormOpen(false);
-    setEditing(null);
-    loadProjects();
+  async function confirmDelete() {
+    if (!toDelete) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deleteProject(toDelete.id);
+      toast(`Projeto "${toDelete.name}" excluído`, 'success');
+      setToDelete(null);
+      loadProjects();
+    } catch (err) {
+      toast(
+        extractErrorMessage(err, 'Não foi possível excluir o projeto.'),
+        'error',
+      );
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
-      <header className="flex flex-col gap-3 border-b border-slate-800 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold">HeroForce</h1>
-          {user && (
-            <p className="text-sm text-slate-400">
-              {user.email} · {user.role}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          {isAdmin && (
-            <button
-              onClick={openCreate}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
-            >
-              Novo projeto
-            </button>
-          )}
-          <button
-            onClick={handleLogout}
-            className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold transition hover:bg-slate-600"
-          >
-            Sair
-          </button>
-        </div>
-      </header>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      <TopBar />
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
-          <div className="flex-1">
-            <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">
-              Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value as ProjectStatus | '')
-              }
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500 sm:w-56"
-            >
-              <option value="">Todos os status</option>
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {STATUS_LABELS[option]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex-1">
-            <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">
-              Responsável
-            </label>
-            <select
-              value={responsibleFilter}
-              onChange={(event) => setResponsibleFilter(event.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500 sm:w-56"
-            >
-              <option value="">Todos os heróis</option>
-              {filterHeroes.map((hero) => (
-                <option key={hero.id} value={hero.id}>
-                  {hero.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {(statusFilter || responsibleFilter) && (
-            <button
-              onClick={() => {
-                setStatusFilter('');
-                setResponsibleFilter('');
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            gap: 16,
+            flexWrap: 'wrap',
+            marginBottom: 22,
+          }}
+        >
+          <div>
+            <h1
+              style={{
+                fontSize: 27,
+                fontWeight: 800,
+                letterSpacing: '-0.035em',
+                marginBottom: 3,
               }}
-              className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-600"
             >
-              Limpar filtros
+              Projetos
+            </h1>
+            <p style={{ color: 'var(--muted)', fontSize: 14.5 }}>
+              {loading ? (
+                'Carregando…'
+              ) : (
+                <>
+                  {stats.total} {stats.total === 1 ? 'projeto' : 'projetos'} ·{' '}
+                  {stats.active} em andamento · {stats.done} concluído
+                  {stats.done === 1 ? '' : 's'}
+                </>
+              )}
+            </p>
+          </div>
+
+          {isAdmin ? (
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate('/projects/new')}
+            >
+              <Icon path={I.plus} size={17} /> Novo projeto
+            </button>
+          ) : (
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                fontSize: 12.5,
+                color: 'var(--muted)',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '7px 11px',
+              }}
+            >
+              <Icon path={I.lock} size={13} /> Somente leitura · papel USER
+            </span>
+          )}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
+            marginBottom: 20,
+          }}
+        >
+          <span
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12.5,
+              fontWeight: 600,
+              color: 'var(--muted)',
+              marginRight: 2,
+            }}
+          >
+            <Icon path={I.filter} size={14} /> Filtros
+          </span>
+
+          <FilterSelect
+            icon={I.grid}
+            value={statusFilter}
+            onChange={(value) => setStatusFilter(value as ProjectStatus | '')}
+          >
+            <option value="">Todos os status</option>
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {STATUS_LABELS[option]}
+              </option>
+            ))}
+          </FilterSelect>
+
+          <FilterSelect
+            icon={I.user}
+            value={responsibleFilter}
+            onChange={setResponsibleFilter}
+            width={200}
+          >
+            <option value="">Todos os responsáveis</option>
+            {responsibleOptions.map((responsible) => (
+              <option key={responsible.id} value={responsible.id}>
+                {responsible.name}
+              </option>
+            ))}
+          </FilterSelect>
+
+          {hasFilter && (
+            <button className="btn btn-ghost btn-sm" onClick={clearFilters}>
+              <Icon path={I.x} size={14} /> Limpar
             </button>
           )}
         </div>
 
-        {loading && <p className="text-slate-400">Carregando projetos...</p>}
-
-        {!loading && error && (
-          <p className="rounded-lg bg-red-500/10 px-4 py-3 text-red-300">
-            {error}
-          </p>
-        )}
-
-        {!loading && !error && projects.length === 0 && (
-          <p className="rounded-2xl bg-slate-800 px-4 py-8 text-center text-slate-400">
-            Nenhum projeto encontrado.
-          </p>
-        )}
-
-        {!loading && !error && projects.length > 0 && (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => {
-              const percent = completionPercentage(project);
-              return (
-                <article
-                  key={project.id}
-                  className="flex flex-col rounded-2xl bg-slate-800 p-5"
+        {loading ? (
+          <div className="proj-grid">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  height: 224,
+                  borderRadius: 'var(--radius)',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                <div className="shimmer" />
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <EmptyState
+            icon={I.alert}
+            title="Não foi possível carregar"
+            body={error}
+            action={
+              <button className="btn btn-secondary" onClick={loadProjects}>
+                Tentar novamente
+              </button>
+            }
+          />
+        ) : projects.length === 0 ? (
+          <EmptyState
+            icon={I.folder}
+            title={hasFilter ? 'Nenhum projeto encontrado' : 'Ainda não há projetos'}
+            body={
+              hasFilter
+                ? 'Tente ajustar os filtros para ver mais resultados.'
+                : isAdmin
+                  ? 'Crie o primeiro projeto para começar a acompanhar o progresso.'
+                  : 'Quando houver projetos, eles aparecerão aqui.'
+            }
+            action={
+              hasFilter ? (
+                <button className="btn btn-secondary" onClick={clearFilters}>
+                  Limpar filtros
+                </button>
+              ) : isAdmin ? (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => navigate('/projects/new')}
                 >
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <h3 className="text-lg font-semibold text-slate-100">
-                      {project.name}
-                    </h3>
-                    <span
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_BADGE[project.status]}`}
-                    >
-                      {STATUS_LABELS[project.status]}
-                    </span>
-                  </div>
-
-                  <p className="mb-4 text-sm text-slate-400">
-                    {project.description}
-                  </p>
-
-                  <div className="mb-4">
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="text-slate-400">Conclusão</span>
-                      <span className="font-semibold text-slate-200">
-                        {percent}%
-                      </span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-700">
-                      <div
-                        className="h-full rounded-full bg-indigo-500"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <dl className="mb-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    {GOAL_FIELDS.map((field) => (
-                      <div
-                        key={field.key}
-                        className="flex items-center justify-between"
-                      >
-                        <dt className="text-slate-400">{field.label}</dt>
-                        <dd className="font-medium text-slate-200">
-                          {project[field.key]}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-
-                  <div className="mt-auto flex items-center justify-between border-t border-slate-700 pt-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
-                        Responsável
-                      </p>
-                      <p className="text-sm text-slate-200">
-                        {project.responsible
-                          ? `${project.responsible.name} · ${project.responsible.character}`
-                          : `#${project.responsibleId}`}
-                      </p>
-                    </div>
-                    {isAdmin && (
-                      <button
-                        onClick={() => openEdit(project)}
-                        className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm font-semibold text-slate-100 transition hover:bg-slate-600"
-                      >
-                        Editar
-                      </button>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+                  <Icon path={I.plus} size={16} /> Novo projeto
+                </button>
+              ) : null
+            }
+          />
+        ) : (
+          <div className="proj-grid fade-in">
+            {projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                isAdmin={isAdmin}
+                onEdit={(p) => navigate(`/projects/${p.id}/edit`)}
+                onDelete={(p) => setToDelete(p)}
+              />
+            ))}
           </div>
         )}
       </main>
 
-      {isAdmin && formOpen && (
-        <ProjectFormModal
-          project={editing}
-          heroes={adminHeroes}
-          onClose={() => {
-            setFormOpen(false);
-            setEditing(null);
-          }}
-          onSaved={handleSaved}
-        />
-      )}
+      <ConfirmDelete
+        project={toDelete}
+        busy={deleting}
+        onCancel={() => !deleting && setToDelete(null)}
+        onConfirm={confirmDelete}
+      />
+    </div>
+  );
+}
+
+interface FilterSelectProps {
+  icon: ReactNode;
+  value: string;
+  onChange: (value: string) => void;
+  children: ReactNode;
+  width?: number;
+}
+
+function FilterSelect({
+  icon,
+  value,
+  onChange,
+  children,
+  width,
+}: FilterSelectProps) {
+  return (
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+      <span
+        style={{
+          position: 'absolute',
+          left: 11,
+          color: 'var(--muted)',
+          pointerEvents: 'none',
+          display: 'flex',
+        }}
+      >
+        <Icon path={icon} size={15} />
+      </span>
+      <select
+        className="select"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          paddingLeft: 33,
+          height: 38,
+          fontSize: 13.5,
+          fontWeight: 500,
+          minWidth: width ?? 180,
+          color: value ? 'var(--ink)' : 'var(--muted)',
+        }}
+      >
+        {children}
+      </select>
     </div>
   );
 }
