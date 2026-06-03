@@ -15,8 +15,8 @@ export class User {
   @Column()
   password!: string;
 
-  @Column()
-  character!: string;
+  @Column({ nullable: true })
+  character?: string | null;
 
   @Column({ default: 'hero' })
   role!: string;
