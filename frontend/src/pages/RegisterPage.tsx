@@ -2,131 +2,163 @@ import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { extractErrorMessage } from '../api/client';
+import { AuthShell } from '../components/AuthShell';
+import { Field } from '../components/ui/Field';
+import { Icon, I } from '../components/ui/Icon';
+import { Spinner } from '../components/ui/Spinner';
+
+const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirm?: string;
+}
 
 export function RegisterPage() {
-  const { token, register } = useAuth();
+  const { token, register, login } = useAuth();
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [character, setCharacter] = useState('');
-  const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [apiErr, setApiErr] = useState('');
+  const [loading, setLoading] = useState(false);
 
   if (token) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const set = (key: keyof typeof form) => (e: { target: { value: string } }) =>
+    setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  function validate() {
+    const e: FormErrors = {};
+    if (!form.name.trim()) e.name = 'Informe seu nome';
+    else if (form.name.trim().length < 3) e.name = 'Nome muito curto';
+    if (!form.email) e.email = 'Informe seu e-mail';
+    else if (!emailRe.test(form.email)) e.email = 'E-mail inválido';
+    if (!form.password) e.password = 'Crie uma senha';
+    else if (form.password.length < 6) e.password = 'Mínimo de 6 caracteres';
+    if (form.confirm !== form.password) e.confirm = 'As senhas não coincidem';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setError('');
-    setSubmitting(true);
+    setApiErr('');
+    if (!validate()) return;
+    setLoading(true);
     try {
-      await register({ name, email, password, character });
-      navigate('/login', { replace: true });
+      await register({
+        name: form.name.trim(),
+        email: form.email,
+        password: form.password,
+      });
+      await login(form.email, form.password);
+      navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(extractErrorMessage(err, 'Não foi possível concluir o cadastro.'));
+      setApiErr(extractErrorMessage(err, 'Falha ao cadastrar'));
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-900 px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl bg-slate-800 p-8 shadow-xl">
-        <h1 className="mb-1 text-3xl font-bold text-white">Criar conta</h1>
-        <p className="mb-6 text-sm text-slate-400">
-          Cadastre-se e escolha seu personagem.
-        </p>
+    <AuthShell>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 6 }}>
+        Criar conta
+      </h1>
+      <p style={{ color: 'var(--muted)', fontSize: 14.5, marginBottom: 24 }}>
+        Comece agora. Novas contas entram com o papel{' '}
+        <b style={{ color: 'var(--ink-2)' }}>USER</b>.
+      </p>
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {error}
-          </div>
-        )}
+      {apiErr && (
+        <div
+          className="fade-in"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 9,
+            background: 'var(--danger-soft)',
+            border: '1px solid color-mix(in oklch, var(--danger) 28%, transparent)',
+            color: 'var(--danger)',
+            padding: '10px 13px',
+            borderRadius: 10,
+            fontSize: 13.5,
+            fontWeight: 500,
+            marginBottom: 16,
+          }}
+        >
+          <Icon path={I.alert} size={16} />
+          {apiErr}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="mb-1 block text-sm text-slate-300">
-              Nome
-            </label>
-            <input
-              id="name"
-              type="text"
-              required
-              minLength={2}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white outline-none focus:border-indigo-400"
-            />
-          </div>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 15 }} noValidate>
+        <Field
+          label="Nome"
+          required
+          icon={I.user}
+          placeholder="Seu nome completo"
+          value={form.name}
+          onChange={set('name')}
+          error={errors.name}
+        />
+        <Field
+          label="E-mail"
+          required
+          icon={I.mail}
+          type="email"
+          placeholder="voce@empresa.com"
+          value={form.email}
+          onChange={set('email')}
+          error={errors.email}
+        />
+        <Field
+          label="Senha"
+          required
+          icon={I.lock}
+          type="password"
+          placeholder="Mínimo 6 caracteres"
+          value={form.password}
+          onChange={set('password')}
+          error={errors.password}
+        />
+        <Field
+          label="Confirmar senha"
+          required
+          icon={I.lock}
+          type="password"
+          placeholder="Repita a senha"
+          value={form.confirm}
+          onChange={set('confirm')}
+          error={errors.confirm}
+        />
+        <button
+          className="btn btn-primary btn-block"
+          type="submit"
+          disabled={loading}
+          style={{ height: 42, marginTop: 2 }}
+        >
+          {loading ? (
+            <>
+              <Spinner />
+              Criando conta…
+            </>
+          ) : (
+            'Criar conta'
+          )}
+        </button>
+      </form>
 
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm text-slate-300">
-              E-mail
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white outline-none focus:border-indigo-400"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm text-slate-300"
-            >
-              Senha
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white outline-none focus:border-indigo-400"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="character"
-              className="mb-1 block text-sm text-slate-300"
-            >
-              Personagem
-            </label>
-            <input
-              id="character"
-              type="text"
-              required
-              value={character}
-              onChange={(e) => setCharacter(e.target.value)}
-              placeholder="Ex.: Homem-Aranha, Batman..."
-              className="w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white outline-none placeholder:text-slate-500 focus:border-indigo-400"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-indigo-500 py-2 font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-60"
-          >
-            {submitting ? 'Cadastrando...' : 'Cadastrar'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-slate-400">
-          Já tem conta?{' '}
-          <Link to="/login" className="font-semibold text-indigo-400 hover:text-indigo-300">
-            Entrar
-          </Link>
-        </p>
-      </div>
-    </div>
+      <p style={{ marginTop: 22, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
+        Já tem conta?{' '}
+        <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+          Entrar
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

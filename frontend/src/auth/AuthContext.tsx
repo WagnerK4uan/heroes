@@ -9,9 +9,11 @@ import {
 } from 'react';
 import { api, TOKEN_KEY } from '../api/client';
 
-interface AuthUser {
-  userId: number;
+export interface AuthUser {
+  id: number;
+  name: string;
   email: string;
+  character: string | null;
   role: string;
 }
 
@@ -19,16 +21,18 @@ interface RegisterData {
   name: string;
   email: string;
   password: string;
-  character: string;
 }
 
 interface AuthContextValue {
   token: string | null;
   user: AuthUser | null;
   loading: boolean;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
+  refresh: () => Promise<void>;
+  setCharacter: (character: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -40,6 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState<boolean>(!!token);
 
+  const loadProfile = useCallback(async () => {
+    const response = await api.get<AuthUser>('/auth/me');
+    setUser(response.data);
+  }, []);
+
   useEffect(() => {
     if (!token) {
       setUser(null);
@@ -50,13 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true;
     setLoading(true);
 
-    api
-      .get<AuthUser>('/auth/me')
-      .then((response) => {
-        if (active) {
-          setUser(response.data);
-        }
-      })
+    loadProfile()
       .catch(() => {
         if (active) {
           localStorage.removeItem(TOKEN_KEY);
@@ -73,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [token]);
+  }, [token, loadProfile]);
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await api.post<{ access_token: string }>('/auth/login', {
@@ -95,9 +98,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const refresh = useCallback(async () => {
+    await loadProfile();
+  }, [loadProfile]);
+
+  const setCharacter = useCallback((character: string) => {
+    setUser((current) => (current ? { ...current, character } : current));
+  }, []);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ token, user, loading, login, register, logout }),
-    [token, user, loading, login, register, logout],
+    () => ({
+      token,
+      user,
+      loading,
+      isAdmin: user?.role === 'admin',
+      login,
+      register,
+      logout,
+      refresh,
+      setCharacter,
+    }),
+    [token, user, loading, login, register, logout, refresh, setCharacter],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

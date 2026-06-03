@@ -2,93 +2,172 @@ import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { extractErrorMessage } from '../api/client';
+import { AuthShell } from '../components/AuthShell';
+import { Field } from '../components/ui/Field';
+import { Icon, I } from '../components/ui/Icon';
+import { Spinner } from '../components/ui/Spinner';
+import { RolePill } from '../components/ui/RolePill';
+
+const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const QUICK_ACCESS = [
+  { role: 'admin', name: 'Nick Fury', email: 'nick.fury@heroforce.dev', password: 'senha123' },
+  { role: 'hero', name: 'Tony Stark', email: 'tony.stark@heroforce.dev', password: 'senha123' },
+];
 
 export function LoginPage() {
   const { token, login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [apiErr, setApiErr] = useState('');
+  const [loading, setLoading] = useState(false);
 
   if (token) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setError('');
-    setSubmitting(true);
+  function validate() {
+    const e: { email?: string; password?: string } = {};
+    if (!email) e.email = 'Informe seu e-mail';
+    else if (!emailRe.test(email)) e.email = 'E-mail inválido';
+    if (!password) e.password = 'Informe sua senha';
+    else if (password.length < 6) e.password = 'Mínimo de 6 caracteres';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  async function submit(creds: { email: string; password: string }) {
+    setApiErr('');
+    setLoading(true);
     try {
-      await login(email, password);
-      navigate('/', { replace: true });
+      await login(creds.email, creds.password);
+      navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(extractErrorMessage(err, 'Não foi possível entrar.'));
+      setApiErr(extractErrorMessage(err, 'Falha ao entrar'));
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   }
 
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (!validate()) return;
+    submit({ email, password });
+  }
+
+  function quick(target: { email: string; password: string }) {
+    setEmail(target.email);
+    setPassword(target.password);
+    submit(target);
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-900 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-slate-800 p-8 shadow-xl">
-        <h1 className="mb-1 text-3xl font-bold text-white">HeroForce</h1>
-        <p className="mb-6 text-sm text-slate-400">Acesse sua conta de herói.</p>
+    <AuthShell>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 6 }}>
+        Entrar
+      </h1>
+      <p style={{ color: 'var(--muted)', fontSize: 14.5, marginBottom: 24 }}>
+        Bem-vindo de volta. Acesse sua conta para continuar.
+      </p>
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {error}
-          </div>
-        )}
+      {apiErr && (
+        <div
+          className="fade-in"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 9,
+            background: 'var(--danger-soft)',
+            border: '1px solid color-mix(in oklch, var(--danger) 28%, transparent)',
+            color: 'var(--danger)',
+            padding: '10px 13px',
+            borderRadius: 10,
+            fontSize: 13.5,
+            fontWeight: 500,
+            marginBottom: 16,
+          }}
+        >
+          <Icon path={I.alert} size={16} />
+          {apiErr}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm text-slate-300">
-              E-mail
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white outline-none focus:border-indigo-400"
-            />
-          </div>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }} noValidate>
+        <Field
+          label="E-mail"
+          required
+          icon={I.mail}
+          type="email"
+          placeholder="voce@empresa.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={errors.email}
+          autoComplete="email"
+        />
+        <Field
+          label="Senha"
+          required
+          icon={I.lock}
+          type="password"
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          error={errors.password}
+          autoComplete="current-password"
+        />
+        <button
+          className="btn btn-primary btn-block"
+          type="submit"
+          disabled={loading}
+          style={{ height: 42, marginTop: 2 }}
+        >
+          {loading ? (
+            <>
+              <Spinner />
+              Entrando…
+            </>
+          ) : (
+            'Entrar'
+          )}
+        </button>
+      </form>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm text-slate-300"
+      <div style={{ marginTop: 22, paddingTop: 20, borderTop: '1px dashed var(--border-strong)' }}>
+        <div
+          style={{
+            fontSize: 11.5,
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            color: 'var(--faint)',
+            marginBottom: 10,
+          }}
+        >
+          Acesso rápido — avaliação
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {QUICK_ACCESS.map((acc) => (
+            <button
+              key={acc.email}
+              className="btn btn-secondary btn-sm"
+              style={{ flex: 1 }}
+              onClick={() => quick(acc)}
+              disabled={loading}
             >
-              Senha
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white outline-none focus:border-indigo-400"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-indigo-500 py-2 font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-60"
-          >
-            {submitting ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-slate-400">
-          Ainda não tem conta?{' '}
-          <Link to="/register" className="font-semibold text-indigo-400 hover:text-indigo-300">
-            Cadastre-se
-          </Link>
-        </p>
+              <RolePill role={acc.role} /> {acc.name.split(' ')[0]}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
+
+      <p style={{ marginTop: 22, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
+        Não tem conta?{' '}
+        <Link to="/register" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+          Cadastre-se
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

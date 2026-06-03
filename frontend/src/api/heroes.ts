@@ -12,3 +12,8 @@ export async function listHeroes(): Promise<Hero[]> {
   const response = await api.get<Hero[]>('/users');
   return response.data;
 }
+
+export async function setMyHero(character: string): Promise<Hero> {
+  const response = await api.patch<Hero>('/users/me', { character });
+  return response.data;
+}

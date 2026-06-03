@@ -1,8 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ChooseHeroPage } from './pages/ChooseHeroPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { ProtectedRoute } from './auth/ProtectedRoute';
+import { RequireAuth, RequireHero } from './auth/guards';
 
 export default function App() {
   return (
@@ -10,14 +11,25 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route
-        path="/"
+        path="/choose-hero"
         element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
+          <RequireAuth>
+            <ChooseHeroPage />
+          </RequireAuth>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route
+        path="/dashboard"
+        element={
+          <RequireAuth>
+            <RequireHero>
+              <DashboardPage />
+            </RequireHero>
+          </RequireAuth>
+        }
+      />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
