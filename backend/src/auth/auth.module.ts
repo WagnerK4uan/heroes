@@ -10,7 +10,6 @@ import { UsersModule } from '../users/users.module';
 @Module({
   imports: [
     UsersModule,
-    // Registra o Passport, o sistema geral de portaria.
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -22,8 +21,6 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  // A JwtStrategy entra como provider para o Nest saber que ela existe
-  // e poder usá-la quando o guard a invocar.
   providers: [AuthService, JwtStrategy],
 })
 export class AuthModule {}
