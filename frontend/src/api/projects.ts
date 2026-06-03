@@ -86,6 +86,11 @@ export async function listProjects(
   return response.data;
 }
 
+export async function getProject(id: number): Promise<Project> {
+  const response = await api.get<Project>(`/projects/${id}`);
+  return response.data;
+}
+
 export async function createProject(
   payload: ProjectPayload,
 ): Promise<Project> {

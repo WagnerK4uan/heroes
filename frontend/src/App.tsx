@@ -3,7 +3,8 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ChooseHeroPage } from './pages/ChooseHeroPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { RequireAuth, RequireHero } from './auth/guards';
+import { ProjectFormPage } from './pages/ProjectFormPage';
+import { RequireAuth, RequireHero, RequireAdmin } from './auth/guards';
 
 export default function App() {
   return (
@@ -24,6 +25,30 @@ export default function App() {
           <RequireAuth>
             <RequireHero>
               <DashboardPage />
+            </RequireHero>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/projects/new"
+        element={
+          <RequireAuth>
+            <RequireHero>
+              <RequireAdmin>
+                <ProjectFormPage mode="create" />
+              </RequireAdmin>
+            </RequireHero>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/projects/:id/edit"
+        element={
+          <RequireAuth>
+            <RequireHero>
+              <RequireAdmin>
+                <ProjectFormPage mode="edit" />
+              </RequireAdmin>
             </RequireHero>
           </RequireAuth>
         }
