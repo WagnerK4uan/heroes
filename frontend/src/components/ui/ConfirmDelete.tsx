@@ -39,7 +39,7 @@ export function ConfirmDelete({
         position: 'fixed',
         inset: 0,
         zIndex: 90,
-        background: 'oklch(0.2 0.02 280 / .45)',
+        background: 'oklch(0.2 0.02 255 / .45)',
         backdropFilter: 'blur(2px)',
         display: 'flex',
         alignItems: 'center',
