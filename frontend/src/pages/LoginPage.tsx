@@ -15,6 +15,8 @@ const QUICK_ACCESS = [
   { role: 'hero', name: 'Tony Stark', email: 'tony.stark@heroforce.dev', password: 'senha123' },
 ];
 
+const SHOW_QUICK_ACCESS = import.meta.env.VITE_SHOW_QUICK_ACCESS === 'true';
+
 export function LoginPage() {
   const { token, login } = useAuth();
   const navigate = useNavigate();
@@ -134,33 +136,35 @@ export function LoginPage() {
         </button>
       </form>
 
-      <div style={{ marginTop: 22, paddingTop: 20, borderTop: '1px dashed var(--border-strong)' }}>
-        <div
-          style={{
-            fontSize: 11.5,
-            fontWeight: 700,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
-            color: 'var(--faint)',
-            marginBottom: 10,
-          }}
-        >
-          Acesso rápido — avaliação
+      {SHOW_QUICK_ACCESS && (
+        <div style={{ marginTop: 22, paddingTop: 20, borderTop: '1px dashed var(--border-strong)' }}>
+          <div
+            style={{
+              fontSize: 11.5,
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              color: 'var(--faint)',
+              marginBottom: 10,
+            }}
+          >
+            Acesso rápido — avaliação
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {QUICK_ACCESS.map((acc) => (
+              <button
+                key={acc.email}
+                className="btn btn-secondary btn-sm"
+                style={{ flex: 1 }}
+                onClick={() => quick(acc)}
+                disabled={loading}
+              >
+                <RolePill role={acc.role} /> {acc.name.split(' ')[0]}
+              </button>
+            ))}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {QUICK_ACCESS.map((acc) => (
-            <button
-              key={acc.email}
-              className="btn btn-secondary btn-sm"
-              style={{ flex: 1 }}
-              onClick={() => quick(acc)}
-              disabled={loading}
-            >
-              <RolePill role={acc.role} /> {acc.name.split(' ')[0]}
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
 
       <p style={{ marginTop: 22, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
         Não tem conta?{' '}
