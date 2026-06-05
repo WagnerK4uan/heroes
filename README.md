@@ -218,16 +218,6 @@ docker compose up -d --build
 docker compose logs -f
 ```
 
-### Checklist de produção
-
-- [ ] **HTTPS / reverse proxy** (Nginx, Caddy ou Traefik) na frente dos serviços, com certificado TLS.
-- [ ] `VITE_API_URL` apontando para o domínio público correto.
-- [ ] **Segredos fortes** (`JWT_SECRET` e senha do banco) — nunca os valores padrão.
-- [ ] **Backup** periódico do volume `db_data` (dados do Postgres).
-- [ ] Atenção ao `synchronize: true`: prático em desenvolvimento, mas **arriscado em produção** (pode alterar o schema automaticamente). Avalie desativá-lo e usar migrations conforme o projeto evoluir.
-
-> 🔧 **Evolução sugerida:** hoje o deploy é **manual** — não há pipeline de CI/CD configurada. Um workflow em `.github/workflows/` poderia automatizar build, testes e `docker compose up -d --build` no servidor a cada push na branch `deploy`.
-
 ---
 
 ## 🗺️ Status do projeto
