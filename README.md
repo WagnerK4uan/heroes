@@ -241,5 +241,5 @@ docker compose logs -f
 | Swagger                                | ✅      |
 | Docker                                 | ✅      |
 | Testes automatizados                   | ✅      |
-| Deploy                                 | ⏳ em andamento |
-| CI/CD                                  | ⏳ futuro       |
+| Deploy                                 | ✅      |
+| CI/CD                                  | ✅      |
