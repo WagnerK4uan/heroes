@@ -40,7 +40,6 @@ heroes/
 │   ├── Dockerfile
 │   ├── nginx.conf
 │   └── .env.example
-├── specs/               # Especificações das funcionalidades
 ├── docker-compose.yml   # Orquestração (db + backend + frontend)
 └── CLAUDE.md            # Documentação do projeto
 ```
