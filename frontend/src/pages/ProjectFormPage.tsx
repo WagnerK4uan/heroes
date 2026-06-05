@@ -182,7 +182,13 @@ export function ProjectFormPage({ mode }: ProjectFormPageProps) {
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <TopBar />
 
-      <main style={{ maxWidth: 720, margin: '0 auto', padding: '26px 24px 80px' }}>
+      <main
+        style={{
+          maxWidth: 720,
+          margin: '0 auto',
+          padding: 'clamp(18px, 5vw, 26px) clamp(16px, 5vw, 24px) 80px',
+        }}
+      >
         <button
           className="btn btn-ghost btn-sm"
           onClick={() => navigate('/dashboard')}
@@ -210,7 +216,7 @@ export function ProjectFormPage({ mode }: ProjectFormPageProps) {
             <div style={{ marginBottom: 24 }}>
               <h1
                 style={{
-                  fontSize: 25,
+                  fontSize: 'clamp(21px, 5.5vw, 25px)',
                   fontWeight: 800,
                   letterSpacing: '-0.035em',
                   marginBottom: 4,
@@ -246,7 +252,7 @@ export function ProjectFormPage({ mode }: ProjectFormPageProps) {
                   background: 'var(--surface)',
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-lg)',
-                  padding: 26,
+                  padding: 'clamp(16px, 4vw, 26px)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 20,

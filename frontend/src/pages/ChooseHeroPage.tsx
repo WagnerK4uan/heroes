@@ -51,7 +51,7 @@ export function ChooseHeroPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 24px',
+          padding: '0 clamp(16px, 5vw, 24px)',
           borderBottom: '1px solid var(--border)',
         }}
       >
@@ -74,7 +74,7 @@ export function ChooseHeroPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '40px 24px',
+          padding: 'clamp(24px, 6vw, 40px) clamp(16px, 5vw, 24px)',
         }}
       >
         <div className="fade-in" style={{ width: '100%', maxWidth: 760 }}>
@@ -101,7 +101,7 @@ export function ChooseHeroPage() {
             </div>
             <h1
               style={{
-                fontSize: 30,
+                fontSize: 'clamp(23px, 7vw, 30px)',
                 fontWeight: 800,
                 letterSpacing: '-0.035em',
                 marginBottom: 6,

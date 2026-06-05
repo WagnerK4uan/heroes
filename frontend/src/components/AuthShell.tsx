@@ -4,14 +4,7 @@ import { ThemeToggle } from './ui/ThemeToggle';
 
 export function AuthShell({ children }: { children: ReactNode }) {
   return (
-    <div
-      className="auth-shell"
-      style={{
-        minHeight: '100vh',
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.05fr)',
-      }}
-    >
+    <div className="auth-shell">
       <div
         className="auth-aside"
         style={{
@@ -21,9 +14,6 @@ export function AuthShell({ children }: { children: ReactNode }) {
           padding: '48px 52px',
           position: 'relative',
           overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
         }}
       >
         <div
@@ -103,7 +93,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '40px 28px',
+          padding: 'clamp(24px, 6vw, 40px) clamp(20px, 6vw, 28px)',
           background: 'var(--bg)',
           position: 'relative',
         }}
