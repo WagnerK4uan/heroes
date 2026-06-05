@@ -51,7 +51,7 @@ export function TopBar() {
         display: 'flex',
         alignItems: 'center',
         gap: 16,
-        padding: '0 24px',
+        padding: '0 clamp(14px, 4vw, 24px)',
       }}
     >
       <a href="#/dashboard" style={{ display: 'flex' }}>

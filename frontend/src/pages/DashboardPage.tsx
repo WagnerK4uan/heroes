@@ -130,21 +130,18 @@ export function DashboardPage() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <TopBar />
 
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-between',
-            gap: 16,
-            flexWrap: 'wrap',
-            marginBottom: 22,
-          }}
-        >
+      <main
+        style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          padding: 'clamp(20px, 5vw, 32px) clamp(16px, 5vw, 24px) 80px',
+        }}
+      >
+        <div className="dash-head">
           <div>
             <h1
               style={{
-                fontSize: 27,
+                fontSize: 'clamp(22px, 6vw, 27px)',
                 fontWeight: 800,
                 letterSpacing: '-0.035em',
                 marginBottom: 3,
@@ -191,16 +188,9 @@ export function DashboardPage() {
           )}
         </div>
 
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            flexWrap: 'wrap',
-            marginBottom: 20,
-          }}
-        >
+        <div className="dash-filters">
           <span
+            className="dash-filters-label"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -344,7 +334,10 @@ function FilterSelect({
   width,
 }: FilterSelectProps) {
   return (
-    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+    <div
+      className="filter-select"
+      style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+    >
       <span
         style={{
           position: 'absolute',

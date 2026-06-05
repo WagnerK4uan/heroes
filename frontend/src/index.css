@@ -421,7 +421,17 @@ a {
 .hero-card:hover .avatar {
   transform: scale(1.06);
 }
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 @media (max-width: 680px) {
+  .hero-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 480px) {
   .hero-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -429,7 +439,7 @@ a {
 
 .proj-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 16px;
 }
 .proj-card {
@@ -454,6 +464,41 @@ a {
 @media (hover: none) {
   .card-actions {
     opacity: 1;
+  }
+}
+
+.dash-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.dash-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+@media (max-width: 560px) {
+  .dash-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .dash-head .btn {
+    width: 100%;
+  }
+  .dash-filters {
+    gap: 8px;
+  }
+  .dash-filters-label {
+    width: 100%;
+  }
+  .dash-filters .filter-select {
+    flex: 1 1 100%;
   }
 }
 
@@ -525,6 +570,11 @@ a {
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+}
+.auth-aside {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 @media (max-width: 860px) {
   .auth-shell {
