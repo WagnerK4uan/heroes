@@ -178,47 +178,6 @@ npm run test:cov    # cobertura
 npm run test:e2e    # testes end-to-end
 ```
 
----
-
-## ☁️ Deploy (Docker Compose em VPS)
-
-O deploy é feito subindo a stack completa via Docker Compose em um servidor/VPS.
-
-### 1. Preparar o servidor
-
-Instale **Docker** e o plugin **Docker Compose** na VPS (Ubuntu/Debian):
-
-```bash
-curl -fsSL https://get.docker.com | sh
-```
-
-### 2. Obter o código
-
-```bash
-git clone https://github.com/WagnerK4uan/heroes.git
-cd heroes
-git checkout deploy
-```
-
-### 3. Ajustar variáveis de produção
-
-Antes de subir, edite o `docker-compose.yml` (ou use um `.env`/arquivo de override) e ajuste:
-
-- **`JWT_SECRET`** — troque `change-me-in-production` por um segredo forte e aleatório.
-- **Senha do Postgres** — substitua `postgres` por uma senha forte (em `db` **e** no `backend`).
-- **`VITE_API_URL`** (build arg do `frontend`) — aponte para o **endereço público da API**, e não `http://localhost:3000`. Ex.: `https://api.seudominio.com`.
-
-> 💡 O `VITE_API_URL` é injetado em **tempo de build** do frontend. Se mudar essa URL depois, é necessário reconstruir a imagem do frontend (`docker compose up -d --build frontend`).
-
-### 4. Subir
-
-```bash
-docker compose up -d --build
-docker compose logs -f
-```
-
----
-
 ## 🗺️ Status do projeto
 
 | Área                                   | Status |
